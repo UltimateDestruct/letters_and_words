@@ -75,6 +75,37 @@ class WordRepository
         ];
     }
 
+    /**
+     * @return array{
+     *     count: int,
+     *     first: string|null,
+     *     last: string|null,
+     *     words: string[],
+     *     page: int,
+     *     per_page: int,
+     *     total_pages: int
+     * }
+     */
+    public function getByLengthPaginated(int $length, int $page, int $perPage): array
+    {
+        $base = $this->getByLength($length);
+        $total = $base['count'];
+        $all = $base['words'];
+        $totalPages = $total > 0 ? (int) ceil($total / $perPage) : 0;
+        $offset = ($page - 1) * $perPage;
+        $pageWords = $total === 0 ? [] : array_slice($all, $offset, $perPage);
+
+        return [
+            'count' => $total,
+            'first' => $base['first'],
+            'last' => $base['last'],
+            'words' => $pageWords,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => $totalPages,
+        ];
+    }
+
     public function maxLength(): int
     {
         return $this->maxLength;

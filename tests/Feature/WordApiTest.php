@@ -31,7 +31,10 @@ class WordApiTest extends TestCase
             ->assertJsonPath('count', 4)
             ->assertJsonPath('first', 'cat')
             ->assertJsonPath('last', 'hat')
-            ->assertJsonPath('words', ['cat', 'cow', 'dog', 'hat']);
+            ->assertJsonPath('words', ['cat', 'cow', 'dog', 'hat'])
+            ->assertJsonPath('page', 1)
+            ->assertJsonPath('per_page', 10)
+            ->assertJsonPath('total_pages', 1);
     }
 
     public function test_rejects_invalid_length(): void
@@ -49,6 +52,38 @@ class WordApiTest extends TestCase
             ->assertJsonPath('count', 0)
             ->assertJsonPath('first', null)
             ->assertJsonPath('last', null)
-            ->assertJsonPath('words', []);
+            ->assertJsonPath('words', [])
+            ->assertJsonPath('page', 1)
+            ->assertJsonPath('per_page', 10)
+            ->assertJsonPath('total_pages', 0);
+    }
+
+    public function test_paginates_words(): void
+    {
+        $response = $this->getJson('/api/words?length=3&page=1&per_page=2');
+
+        $response->assertOk()
+            ->assertJsonPath('count', 4)
+            ->assertJsonPath('first', 'cat')
+            ->assertJsonPath('last', 'hat')
+            ->assertJsonPath('words', ['cat', 'cow'])
+            ->assertJsonPath('page', 1)
+            ->assertJsonPath('per_page', 2)
+            ->assertJsonPath('total_pages', 2);
+
+        $this->getJson('/api/words?length=3&page=2&per_page=2')
+            ->assertOk()
+            ->assertJsonPath('words', ['dog', 'hat']);
+    }
+
+    public function test_rejects_invalid_page(): void
+    {
+        $this->getJson('/api/words?length=3&page=0')->assertStatus(422);
+    }
+
+    public function test_rejects_invalid_per_page(): void
+    {
+        $this->getJson('/api/words?length=3&per_page=0')->assertStatus(422);
+        $this->getJson('/api/words?length=3&per_page=201')->assertStatus(422);
     }
 }
