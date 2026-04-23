@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\ErrorLogger;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,5 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->report(function (\Throwable $e) {
+            try {
+                app(ErrorLogger::class)->logThrowable($e, request());
+            } catch (\Throwable) {
+                // Never let the error log break reporting (e.g. DB unavailable).
+            }
+        });
     })->create();
