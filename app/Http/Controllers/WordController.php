@@ -20,7 +20,7 @@ class WordController extends Controller
         }
 
         $page = (int) $request->query('page', 1);
-        $perPage = (int) $request->query('per_page', 10);
+        $perPage = (int) $request->query('per_page', (int) config('words.results_per_page'));
 
         if ($page < 1) {
             return response()->json([

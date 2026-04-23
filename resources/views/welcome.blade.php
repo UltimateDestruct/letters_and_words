@@ -9,6 +9,7 @@
         @vite(['resources/js/app.js'])
         <script>
             window.__WORD_MAX_LENGTH__ = {{ (int) config('words.max_length') }};
+            window.__WORD_RESULTS_PER_PAGE__ = {{ (int) config('words.results_per_page') }};
         </script>
     </head>
     <body class="min-h-screen bg-[#FDFDFC] font-sans text-[#1b1b18] antialiased">

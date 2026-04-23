@@ -18,6 +18,7 @@ class WordApiTest extends TestCase
         config([
             'words.path' => $path,
             'words.max_length' => 10,
+            'words.results_per_page' => 10,
         ]);
 
         $this->app->forgetInstance(\App\Services\WordRepository::class);

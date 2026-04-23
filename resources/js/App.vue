@@ -6,13 +6,18 @@ const maxLength =
         ? window.__WORD_MAX_LENGTH__
         : 45;
 
+const perPage =
+    typeof window !== 'undefined' && window.__WORD_RESULTS_PER_PAGE__
+        ? window.__WORD_RESULTS_PER_PAGE__
+        : 10;
+
 const length = ref(4);
 const count = ref(0);
 const first = ref('');
 const last = ref('');
 const words = ref([]);
 const page = ref(1);
-const perPage = 10;
+const pageJumpDraft = ref('1');
 const totalPages = ref(0);
 const loading = ref(false);
 const error = ref('');
@@ -20,10 +25,45 @@ const emptyMessage = 'No words match this length. Try another number.';
 
 const prettyCount = computed(() => count.value.toLocaleString());
 
+const canGoFirst = computed(() => page.value > 1 && !loading.value);
 const canPrev = computed(() => page.value > 1 && !loading.value);
 const canNext = computed(
     () => totalPages.value > 0 && page.value < totalPages.value && !loading.value,
 );
+const canGoLast = computed(
+    () => totalPages.value > 0 && page.value < totalPages.value && !loading.value,
+);
+
+function goFirst() {
+    if (page.value !== 1) {
+        page.value = 1;
+    }
+}
+
+function goLast() {
+    const lastPage = totalPages.value;
+    if (lastPage > 0 && page.value !== lastPage) {
+        page.value = lastPage;
+    }
+}
+
+function commitPageJump() {
+    const parsed = Number.parseInt(pageJumpDraft.value, 10);
+    const max = totalPages.value > 0 ? totalPages.value : 1;
+    if (!Number.isFinite(parsed)) {
+        pageJumpDraft.value = String(page.value);
+        return;
+    }
+    const clamped = Math.min(Math.max(1, parsed), max);
+    pageJumpDraft.value = String(clamped);
+    if (clamped !== page.value) {
+        page.value = clamped;
+    }
+}
+
+watch(page, (p) => {
+    pageJumpDraft.value = String(p);
+});
 
 async function fetchWords() {
     loading.value = true;
@@ -168,24 +208,53 @@ watch(page, () => {
                     <span class="tabular-nums">
                         Page {{ page }} of {{ totalPages || 1 }}
                     </span>
-                    <div class="flex gap-2">
+                    <div class="flex items-center gap-1 font-medium tabular-nums sm:gap-2">
                         <button
                             type="button"
-                            class="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 font-medium text-neutral-800 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            class="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-neutral-800 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-2.5"
+                            :disabled="!canGoFirst"
+                            aria-label="First page"
+                            @click="goFirst"
+                        >
+                            {{ '<<' }}
+                        </button>
+                        <button
+                            type="button"
+                            class="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-neutral-800 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-2.5"
                             :disabled="!canPrev"
                             aria-label="Previous page"
                             @click="page -= 1"
                         >
-                            Previous
+                            {{ '<' }}
                         </button>
+                        <input
+                            v-model="pageJumpDraft"
+                            type="text"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            maxlength="6"
+                            aria-label="Go to page"
+                            class="w-16 rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-center text-neutral-900 shadow-sm outline-none ring-neutral-400 focus:ring-2"
+                            @keydown.enter.prevent="commitPageJump"
+                            @blur="commitPageJump"
+                        />
                         <button
                             type="button"
-                            class="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 font-medium text-neutral-800 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            class="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-neutral-800 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-2.5"
                             :disabled="!canNext"
                             aria-label="Next page"
                             @click="page += 1"
                         >
-                            Next
+                            {{ '>' }}
+                        </button>
+                        <button
+                            type="button"
+                            class="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-neutral-800 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-2.5"
+                            :disabled="!canGoLast"
+                            aria-label="Last page"
+                            @click="goLast"
+                        >
+                            {{ '>>' }}
                         </button>
                     </div>
                 </div>
